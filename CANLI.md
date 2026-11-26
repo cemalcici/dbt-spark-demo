@@ -2,19 +2,18 @@
 
 > Spark hesaplar, dbt hesabı güvenilir kılar. İş sorusu: *Gecikme memnuniyeti düşürüyor mu?*
 
-Yukarıdan aşağı akar. Her adım = tek dosya **ya da** tek komut. Komutlar `canli/olist` içinden çalışır
-(Perde 01'in ilk adımları hariç); her perdenin ilk adımı `cd` satırını tekrarlar, yeni terminal açsanız da sorun olmaz.
-`DBT_PROFILES_DIR=..` → profil `canli/profiles.yml`'da durur; `~/.dbt`'ye dokunulmaz.
-Çözüm (bitmiş proje) repo kökünde; her perdenin bitmiş hâli `perde-NN` tag'i. Container akışı yedek: [DEMO.md](DEMO.md).
+Yukarıdan aşağı akar. Her adım = tek dosya **ya da** tek komut.
+
+Tek VS Code penceresi, repo kökünde (`code .`). Çözüm (bitmiş proje) kökte; canlı çalışma **boş başlayan** `canli/` alt klasöründe (gitignore'da).
+`canli/` kendi uv ortamını kurar; Spark onun için "uzak sunucu": `localhost:10000`. Profil `canli/profiles.yml`'da durur (`DBT_PROFILES_DIR`); `~/.dbt`'ye dokunulmaz.
+Container akışı yedek: [DEMO.md](DEMO.md).
 
 ## Ön hazırlık (19:50)
 
 - [ ] `cd ~/Documents/projects/vbo-dbt-spark-demo && docker compose up -d --wait` (spark `healthy`)
-- [ ] `uv sync` (`.venv`, dbt 1.11)
-- [ ] `scripts/pyhive-yama.sh` ("PyHive yaması uygulandı" ya da "zaten uygulanmış")
-- [ ] `rm -rf canli && mkdir canli`
-- [ ] Sekmeler: terminal (repo kökü), VS Code (repo kökü: `code .`; Python yorumlayıcısı `.venv`), http://localhost:4040 (Spark UI); docs sonra http://localhost:8081
-
+- [ ] `rm -rf canli && mkdir canli` (temiz başlangıç)
+- [ ] VS Code: `code .` (repo kökü); terminal repo kökünde
+- [ ] Sekmeler: http://localhost:4040 (Spark UI); docs sonra http://localhost:8081
 
 ---
 
@@ -22,19 +21,46 @@ Yukarıdan aşağı akar. Her adım = tek dosya **ya da** tek komut. Komutlar `c
 
 Amaç: boş klasörden dbt projesi; dbt'nin Spark Thrift Server'a (uzak sunucu gibi, `localhost:10000`) bağlandığını göstermek.
 
-### Adım 1 · canli klasörüne gir
+### Adım 1 · boş klasör
 
 ```bash
-cd ~/Documents/projects/vbo-dbt-spark-demo/canli && export DBT_PROFILES_DIR=$PWD
+cd ~/Documents/projects/vbo-dbt-spark-demo/canli && ls -A
 ```
 
-**Söyle:** Klasör boş; profili de buraya yazdıracağız, ev dizinine değil.  
-**Göster:** Terminal: `ls` boş.
+**Söyle:** Elimizde boş bir klasör ve uzakta çalışan bir Spark var.  
+**Göster:** VS Code explorer: `canli/` boş.
 
-### Adım 2 · dbt init
+### Adım 2 · Python projesi
 
 ```bash
-uv run dbt init olist --project-dir .
+uv init --bare --no-workspace --python 3.12
+```
+
+**Söyle:** dbt bir Python paketi; ortamı uv ile kuruyoruz.  
+**Göster:** VS Code: `canli/pyproject.toml`.
+
+### Adım 3 · dbt + Spark adapter
+
+```bash
+uv add "dbt-core==1.11.17" "dbt-spark[PyHive]==1.11.1"
+```
+
+**Söyle:** dbt-core motor değil; dbt-spark, SQL'i Spark'a taşıyan adapter.  
+**Göster:** Terminal: paketler kuruldu.
+
+### Adım 4 · PyHive yaması
+
+```bash
+../scripts/pyhive-yama.sh
+```
+
+**Söyle:** Spark 3.5 ile PyHive'ın bilinen bir hatası var; tek satırlık yama.  
+**Göster:** Terminal: "PyHive yaması uygulandı".
+
+### Adım 5 · dbt init
+
+```bash
+export DBT_PROFILES_DIR=$PWD && uv run dbt init olist --project-dir .
 ```
 
 **Söyle:** init iki şey yapar: proje iskeleti + bağlantı profili.  
@@ -54,7 +80,7 @@ uv run dbt init olist --project-dir .
 
 `--project-dir .`: canli/ çözüm projesinin içinde; bu bayrak olmadan init üstteki `dbt_project.yml`'ı bulup yalnız profil kurar.
 
-### Adım 3 · profil dosyası
+### Adım 6 · profil dosyası
 
 ```bash
 cat profiles.yml
@@ -63,18 +89,18 @@ cat profiles.yml
 **Söyle:** dbt veri tutmaz: sadece Spark'a nereden bağlanacağını bilir.  
 **Göster:** Terminal: host localhost, port 10000, method thrift.
 
-### Adım 4 · iskelete bak, örnekleri sil
+### Adım 7 · iskelete bak, örnekleri sil
 
 ```bash
 cd olist && rm -rf models/example && ls
 ```
 
 **Söyle:** models, macros, tests, dbt_project.yml: proje bundan ibaret.  
-**Göster:** VS Code: `canli/olist`.
+**Göster:** VS Code: `olist/` klasörü.
 
-### Adım 5 · dbt_project.yml (sade hâli)
+### Adım 8 · dbt_project.yml (sade hâli)
 
-Dosya: `canli/olist/dbt_project.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/dbt_project.yml`
 
 ```yaml
 name: olist
@@ -96,7 +122,7 @@ clean-targets: [target, dbt_packages]
 **Söyle:** Proje adı olist, profil olist; init'in yorumlarını sadeleştirdik.  
 **Göster:** VS Code.
 
-### Adım 6 · dbt debug
+### Adım 9 · dbt debug
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -106,7 +132,7 @@ uv run dbt debug
 **Söyle:** Bağlantı testi: dbt Spark Thrift Server'a SQL gönderebiliyor mu?  
 **Göster:** Terminal: `All checks passed!`
 
-### Adım 7 · ilk sorgu
+### Adım 10 · ilk sorgu
 
 ```bash
 uv run dbt show --inline "select current_database() as db, version() as spark_surumu"
@@ -124,9 +150,9 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 01 && uv run dbt
 
 Amaç: ham veriyi `source()` ile bildirmek, temiz `stg_` modelleri kurmak.
 
-### Adım 8 · ham tabloları tanıtan makro
+### Adım 11 · ham tabloları tanıtan makro
 
-Dosya: `canli/olist/macros/create_raw_tables.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/macros/create_raw_tables.sql`
 
 ```sql
 {# Ham CSV'leri Spark'a external table olarak tanıtır. Veri kopyalanmaz; Spark /data altındaki dosyayı okur. #}
@@ -159,7 +185,7 @@ Dosya: `canli/olist/macros/create_raw_tables.sql`
 **Söyle:** dbt EL yapmaz, T yapar: veri Spark'a (lake'e) zaten inmiş; dbt yalnız SELECT çalıştırıp sonucu yine Spark'a yazdırır.  
 **Göster:** Kaynak `raw.*`: CSV üzerine external tablolar (gerçek hayatta lake/Postgres'ten EL ile gelir); hedef: aynı Spark warehouse'u.
 
-### Adım 9 · run-operation
+### Adım 12 · run-operation
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -169,9 +195,9 @@ uv run dbt run-operation create_raw_tables
 **Söyle:** Makro Spark'a DDL gönderir; veri kopyalanmaz.  
 **Göster:** Terminal: `raw.orders hazır <- /data/...` satırları.
 
-### Adım 10 · sources.yml
+### Adım 13 · sources.yml
 
-Dosya: `canli/olist/models/staging/sources.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/sources.yml`
 
 ```yaml
 version: 2
@@ -189,9 +215,9 @@ sources:
 **Söyle:** Kaynağı bir kez bildiriyoruz; modeller `source()` ile ona bağlanır.  
 **Göster:** VS Code.
 
-### Adım 11 · stg_orders
+### Adım 14 · stg_orders
 
-Dosya: `canli/olist/models/staging/stg_orders.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/stg_orders.sql`
 
 ```sql
 select
@@ -209,7 +235,7 @@ from {{ source('olist', 'orders') }}
 **Söyle:** Staging: tip dönüşümü + yeniden adlandırma, iş mantığı yok.  
 **Göster:** VS Code.
 
-### Adım 12 · tek modeli çalıştır
+### Adım 15 · tek modeli çalıştır
 
 ```bash
 uv run dbt run -s stg_orders
@@ -218,7 +244,7 @@ uv run dbt run -s stg_orders
 **Söyle:** dbt SELECT'i view DDL'ine sarıp Spark'a yolladı.  
 **Göster:** Terminal: `canli.stg_orders` view OK.
 
-### Adım 13 · sonuca bak
+### Adım 16 · sonuca bak
 
 ```bash
 uv run dbt show -s stg_orders --limit 5
@@ -227,9 +253,9 @@ uv run dbt show -s stg_orders --limit 5
 **Söyle:** show = gerçek Spark sorgusu.  
 **Göster:** Spark UI → SQL: CSV taraması.
 
-### Adım 14 · stg_order_items
+### Adım 17 · stg_order_items
 
-Dosya: `canli/olist/models/staging/stg_order_items.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/stg_order_items.sql`
 
 ```sql
 select
@@ -244,7 +270,7 @@ from {{ source('olist', 'order_items') }}
 
 **Söyle:** Fiyatlar decimal'e.  
 
-### Adım 15 · çalıştır
+### Adım 18 · çalıştır
 
 ```bash
 uv run dbt run -s stg_order_items
@@ -252,9 +278,9 @@ uv run dbt run -s stg_order_items
 
 **Göster:** Terminal: OK.
 
-### Adım 16 · stg_customers
+### Adım 19 · stg_customers
 
-Dosya: `canli/olist/models/staging/stg_customers.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/stg_customers.sql`
 
 ```sql
 select
@@ -268,7 +294,7 @@ from {{ source('olist', 'customers') }}
 
 **Söyle:** Şehir adı initcap.  
 
-### Adım 17 · çalıştır
+### Adım 20 · çalıştır
 
 ```bash
 uv run dbt run -s stg_customers
@@ -276,9 +302,9 @@ uv run dbt run -s stg_customers
 
 **Göster:** Terminal: OK.
 
-### Adım 18 · stg_order_reviews
+### Adım 21 · stg_order_reviews
 
-Dosya: `canli/olist/models/staging/stg_order_reviews.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/stg_order_reviews.sql`
 
 ```sql
 select
@@ -293,7 +319,7 @@ from {{ source('olist', 'order_reviews') }}
 
 **Söyle:** Puan int'e çevrildi.  
 
-### Adım 19 · çalıştır
+### Adım 22 · çalıştır
 
 ```bash
 uv run dbt run -s stg_order_reviews
@@ -301,7 +327,7 @@ uv run dbt run -s stg_order_reviews
 
 **Göster:** Terminal: OK.
 
-### Adım 20 · yorumlara bak
+### Adım 23 · yorumlara bak
 
 ```bash
 uv run dbt show -s stg_order_reviews --limit 5
@@ -319,9 +345,9 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 02 && uv run dbt
 
 Amaç: `ref()` ile modelleri bağlayıp iş sorusunu cevaplamak.
 
-### Adım 21 · int_order_delays
+### Adım 24 · int_order_delays
 
-Dosya: `canli/olist/models/intermediate/int_order_delays.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/intermediate/int_order_delays.sql`
 
 ```sql
 -- Sipariş başına teslimat gecikmesi (gün) + sepet tutarı
@@ -357,7 +383,7 @@ left join items i on o.order_id = i.order_id
 **Söyle:** `ref()` = bağımlılık; dbt sırayı buradan çıkarır.  
 **Göster:** VS Code: iki ref.
 
-### Adım 22 · çalıştır
+### Adım 25 · çalıştır
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -366,7 +392,7 @@ uv run dbt run -s int_order_delays
 
 **Göster:** Terminal: OK.
 
-### Adım 23 · gecikmelere bak
+### Adım 26 · gecikmelere bak
 
 ```bash
 uv run dbt show -s int_order_delays --limit 5
@@ -375,9 +401,9 @@ uv run dbt show -s int_order_delays --limit 5
 **Söyle:** Pozitif delay_days = geç geldi.  
 **Göster:** Terminal.
 
-### Adım 24 · mart
+### Adım 27 · mart
 
-Dosya: `canli/olist/models/marts/mart_delivery_satisfaction.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/marts/mart_delivery_satisfaction.sql`
 
 ```sql
 -- İş sorusu: Gecikme memnuniyeti düşürüyor mu?
@@ -418,7 +444,7 @@ order by delay_bucket
 **Söyle:** İş sorusunun cevabı tek tablo.  
 **Göster:** VS Code.
 
-### Adım 25 · hepsini çalıştır
+### Adım 28 · hepsini çalıştır
 
 ```bash
 uv run dbt run
@@ -427,7 +453,7 @@ uv run dbt run
 **Söyle:** dbt 6 modeli DAG sırasıyla kurar: stg → int → mart.  
 **Göster:** Terminal: sıralama.
 
-### Adım 26 · cevap
+### Adım 29 · cevap
 
 ```bash
 uv run dbt show -s mart_delivery_satisfaction
@@ -445,9 +471,9 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 03 && uv run dbt
 
 Amaç: staging/int = view, mart = parquet table; dbt'nin ürettiği DDL'i görmek.
 
-### Adım 27 · materialization ayarı
+### Adım 30 · materialization ayarı
 
-Dosya: `canli/olist/dbt_project.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/dbt_project.yml`
 
 ```yaml
 name: olist
@@ -479,7 +505,7 @@ models:
 **Söyle:** Tek satır config, dbt DDL'i kendisi yazar.  
 **Göster:** VS Code: `models:` bloğu.
 
-### Adım 28 · çalıştır
+### Adım 31 · çalıştır
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -489,7 +515,7 @@ uv run dbt run
 **Söyle:** Mart artık tablo: hesap bir kez yapılır.  
 **Göster:** Spark UI → Jobs: parquet yazan job'lar.
 
-### Adım 29 · compiled SQL
+### Adım 32 · compiled SQL
 
 ```bash
 cat target/compiled/olist/models/marts/mart_delivery_satisfaction.sql
@@ -498,7 +524,7 @@ cat target/compiled/olist/models/marts/mart_delivery_satisfaction.sql
 **Söyle:** compiled = ref'ler çözülmüş düz SELECT.  
 **Göster:** Terminal.
 
-### Adım 30 · run SQL
+### Adım 33 · run SQL
 
 ```bash
 cat target/run/olist/models/marts/mart_delivery_satisfaction.sql
@@ -516,9 +542,9 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 04 && uv run dbt
 
 Amaç: generic + singular testlerle veriye sözleşme koymak.
 
-### Adım 31 · generic testler
+### Adım 34 · generic testler
 
-Dosya: `canli/olist/models/staging/schema.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/schema.yml`
 
 ```yaml
 version: 2
@@ -572,9 +598,9 @@ models:
 **Söyle:** unique, not_null, relationships, accepted_values: her biri bir Spark sorgusu.  
 **Göster:** VS Code.
 
-### Adım 32 · singular test
+### Adım 35 · singular test
 
-Dosya: `canli/olist/tests/assert_delivered_after_purchase.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/tests/assert_delivered_after_purchase.sql`
 
 ```sql
 -- Tekil (singular) test: dönen her satır bir hatadır.
@@ -587,7 +613,7 @@ where delivered_at < purchased_at
 **Söyle:** Dönen her satır bir hata.  
 **Göster:** VS Code.
 
-### Adım 33 · test (bilerek kırmızı)
+### Adım 36 · test (bilerek kırmızı)
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -597,7 +623,7 @@ uv run dbt test
 **Söyle:** Gerçek veri: 789 review_id tekrar ediyor.  
 **Göster:** Terminal: `FAIL 789 unique_stg_order_reviews_review_id`.
 
-### Adım 34 · sorunu incele
+### Adım 37 · sorunu incele
 
 ```bash
 uv run dbt show --inline "select review_id, count(distinct order_id) as siparis_sayisi from {{ ref('stg_order_reviews') }} group by review_id having count(*) > 1 order by siparis_sayisi desc" --limit 5
@@ -606,9 +632,9 @@ uv run dbt show --inline "select review_id, count(distinct order_id) as siparis_
 **Söyle:** Aynı yorum birden çok siparişe bağlı: kaynak sorunu, bizim hatamız değil.  
 **Göster:** Terminal.
 
-### Adım 35 · düzeltme: severity warn
+### Adım 38 · düzeltme: severity warn
 
-Dosya: `canli/olist/models/staging/schema.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/schema.yml`
 
 ```yaml
 version: 2
@@ -666,7 +692,7 @@ models:
 **Söyle:** Testi silmiyoruz; görünür kalsın ama pipeline'ı durdurmasın.  
 **Göster:** VS Code: `severity: warn`.
 
-### Adım 36 · tekrar test
+### Adım 39 · tekrar test
 
 ```bash
 uv run dbt test
@@ -683,9 +709,9 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 05 && uv run dbt
 
 Amaç: YAML açıklamalarından doküman ve lineage.
 
-### Adım 37 · kaynak açıklamaları
+### Adım 40 · kaynak açıklamaları
 
-Dosya: `canli/olist/models/staging/sources.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/sources.yml`
 
 ```yaml
 version: 2
@@ -707,9 +733,9 @@ sources:
 
 **Söyle:** Doküman kodla birlikte yaşar.  
 
-### Adım 38 · staging açıklamaları
+### Adım 41 · staging açıklamaları
 
-Dosya: `canli/olist/models/staging/schema.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/schema.yml`
 
 ```yaml
 version: 2
@@ -780,9 +806,9 @@ models:
 ```
 
 
-### Adım 39 · intermediate açıklama + test
+### Adım 42 · intermediate açıklama + test
 
-Dosya: `canli/olist/models/intermediate/schema.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/intermediate/schema.yml`
 
 ```yaml
 version: 2
@@ -801,9 +827,9 @@ models:
 ```
 
 
-### Adım 40 · mart açıklaması
+### Adım 43 · mart açıklaması
 
-Dosya: `canli/olist/models/marts/schema.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/marts/schema.yml`
 
 ```yaml
 version: 2
@@ -826,7 +852,7 @@ models:
 ```
 
 
-### Adım 41 · build
+### Adım 44 · build
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -836,7 +862,7 @@ uv run dbt build
 **Söyle:** build = run + test, DAG sırasıyla.  
 **Göster:** Terminal: özet.
 
-### Adım 42 · docs generate
+### Adım 45 · docs generate
 
 ```bash
 uv run dbt docs generate
@@ -845,7 +871,7 @@ uv run dbt docs generate
 **Söyle:** Kolon tiplerini Spark metastore'undan okur.  
 **Göster:** Spark UI → SQL: metadata sorguları.
 
-### Adım 43 · docs serve
+### Adım 46 · docs serve
 
 ```bash
 uv run dbt docs serve --port 8081 --no-browser
@@ -863,7 +889,7 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 06 && uv run dbt
 
 Amaç: sadece gereken parçayı çalıştırmak.
 
-### Adım 44 · atalar + mart
+### Adım 47 · atalar + mart
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -873,7 +899,7 @@ uv run dbt build --select +mart_delivery_satisfaction
 **Söyle:** `+model` = model ve tüm ataları.  
 **Göster:** Terminal.
 
-### Adım 45 · stg_orders ve çocukları
+### Adım 48 · stg_orders ve çocukları
 
 ```bash
 uv run dbt build --select stg_orders+
@@ -882,7 +908,7 @@ uv run dbt build --select stg_orders+
 **Söyle:** `model+` = model ve etkilediği her şey.  
 **Göster:** Terminal.
 
-### Adım 46 · state fotoğrafı
+### Adım 49 · state fotoğrafı
 
 ```bash
 mkdir -p state && cp target/manifest.json state/
@@ -890,9 +916,9 @@ mkdir -p state && cp target/manifest.json state/
 
 **Söyle:** Production manifest'i gibi düşünün.  
 
-### Adım 47 · yeni kolon: delivery_days
+### Adım 50 · yeni kolon: delivery_days
 
-Dosya: `canli/olist/models/intermediate/int_order_delays.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/intermediate/int_order_delays.sql`
 
 ```sql
 -- Sipariş başına teslimat gecikmesi (gün) + sepet tutarı
@@ -929,7 +955,7 @@ left join items i on o.order_id = i.order_id
 **Söyle:** Bir dosya değişiyor.  
 **Göster:** VS Code: delivery_days satırı.
 
-### Adım 48 · ne değişti?
+### Adım 51 · ne değişti?
 
 ```bash
 uv run dbt ls --select state:modified+ --state state
@@ -938,7 +964,7 @@ uv run dbt ls --select state:modified+ --state state
 **Söyle:** dbt farkı manifest'ten bulur.  
 **Göster:** Terminal: sadece int + mart + testleri.
 
-### Adım 49 · sadece etkilenenleri kur
+### Adım 52 · sadece etkilenenleri kur
 
 ```bash
 uv run dbt build --select state:modified+ --state state
@@ -956,9 +982,9 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 07 && uv run dbt
 
 Amaç: gecikme mantığını sahte satırlarla test etmek.
 
-### Adım 50 · unit test
+### Adım 53 · unit test
 
-Dosya: `canli/olist/models/intermediate/unit_tests.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/intermediate/unit_tests.yml`
 
 ```yaml
 version: 2
@@ -988,7 +1014,7 @@ unit_tests:
 **Söyle:** Girdiler mock, gerçek veriye dokunmaz.  
 **Göster:** VS Code: given / expect.
 
-### Adım 51 · unit test
+### Adım 54 · unit test
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -997,7 +1023,7 @@ uv run dbt test --select test_type:unit
 
 **Göster:** Terminal: PASS.
 
-### Adım 52 · mantığı bilerek boz
+### Adım 55 · mantığı bilerek boz
 
 ```bash
 perl -pi -e 's/datediff\(o.delivered_at, o.estimated_delivery_at\)/datediff(o.estimated_delivery_at, o.delivered_at)/' models/intermediate/int_order_delays.sql
@@ -1006,7 +1032,7 @@ perl -pi -e 's/datediff\(o.delivered_at, o.estimated_delivery_at\)/datediff(o.es
 **Söyle:** datediff argümanlarının yerini değiştiriyoruz.  
 **Göster:** VS Code: değişen satır.
 
-### Adım 53 · unit test (bilerek kırmızı)
+### Adım 56 · unit test (bilerek kırmızı)
 
 ```bash
 uv run dbt test --select test_type:unit
@@ -1015,14 +1041,14 @@ uv run dbt test --select test_type:unit
 **Söyle:** Unit test mantık hatasını veriye bakmadan yakaladı.  
 **Göster:** Terminal: FAIL, beklenen/gerçek farkı.
 
-### Adım 54 · düzelt
+### Adım 57 · düzelt
 
 ```bash
 perl -pi -e 's/datediff\(o.estimated_delivery_at, o.delivered_at\)/datediff(o.delivered_at, o.estimated_delivery_at)/' models/intermediate/int_order_delays.sql
 ```
 
 
-### Adım 55 · tekrar unit test
+### Adım 58 · tekrar unit test
 
 ```bash
 uv run dbt test --select test_type:unit
@@ -1039,9 +1065,9 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 08 && uv run dbt
 
 Amaç: mart'ın kolon adı/tipini sözleşmeye bağlamak, panoyu lineage'a eklemek.
 
-### Adım 56 · kontrat
+### Adım 59 · kontrat
 
-Dosya: `canli/olist/models/marts/schema.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/marts/schema.yml`
 
 ```yaml
 version: 2
@@ -1073,9 +1099,9 @@ models:
 **Söyle:** Tip değişirse tablo yazılmadan yakalanır.  
 **Göster:** VS Code: `contract: enforced`.
 
-### Adım 57 · exposure
+### Adım 60 · exposure
 
-Dosya: `canli/olist/models/marts/exposures.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/marts/exposures.yml`
 
 ```yaml
 version: 2
@@ -1096,7 +1122,7 @@ exposures:
 
 **Söyle:** Pano lineage'ın ucunda.  
 
-### Adım 58 · build
+### Adım 61 · build
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -1105,7 +1131,7 @@ uv run dbt build --select mart_delivery_satisfaction
 
 **Göster:** Terminal: PASS.
 
-### Adım 59 · kırıcı değişiklik
+### Adım 62 · kırıcı değişiklik
 
 ```bash
 perl -pi -e 's/ count\(\*\) / cast(count(*) as int) /' models/marts/mart_delivery_satisfaction.sql
@@ -1113,7 +1139,7 @@ perl -pi -e 's/ count\(\*\) / cast(count(*) as int) /' models/marts/mart_deliver
 
 **Söyle:** Biri order_count'u int'e çevirdi.  
 
-### Adım 60 · build (bilerek kırmızı)
+### Adım 63 · build (bilerek kırmızı)
 
 ```bash
 uv run dbt build --select mart_delivery_satisfaction
@@ -1122,14 +1148,14 @@ uv run dbt build --select mart_delivery_satisfaction
 **Söyle:** Kontrat tabloyu korudu: yazılmadı.  
 **Göster:** Terminal: `data type mismatch` tablosu.
 
-### Adım 61 · geri al
+### Adım 64 · geri al
 
 ```bash
 perl -pi -e 's/ cast\(count\(\*\) as int\) / count(*) /' models/marts/mart_delivery_satisfaction.sql
 ```
 
 
-### Adım 62 · tekrar build
+### Adım 65 · tekrar build
 
 ```bash
 uv run dbt build --select mart_delivery_satisfaction
@@ -1146,9 +1172,9 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 09 && uv run dbt
 
 Amaç: kaynak tazeliği; tekrar eden SQL'i makroya, grupları Jinja döngüsüne almak.
 
-### Adım 63 · freshness
+### Adım 66 · freshness
 
-Dosya: `canli/olist/models/staging/sources.yml`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/staging/sources.yml`
 
 ```yaml
 version: 2
@@ -1177,7 +1203,7 @@ sources:
 **Söyle:** Spark bayat veriyle de hesaplar; dbt ölçer.  
 **Göster:** VS Code: loaded_at_field.
 
-### Adım 64 · freshness (bilerek kırmızı)
+### Adım 67 · freshness (bilerek kırmızı)
 
 ```bash
 cd ~/Documents/projects/vbo-dbt-spark-demo/canli/olist && export DBT_PROFILES_DIR=..
@@ -1187,9 +1213,9 @@ uv run dbt source freshness
 **Söyle:** Veri 2018'de kalmış.  
 **Göster:** Terminal: `ERROR STALE`.
 
-### Adım 65 · makro
+### Adım 68 · makro
 
-Dosya: `canli/olist/macros/gun_farki.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/macros/gun_farki.sql`
 
 ```sql
 {# İki tarih arasındaki gün farkı: bitis - baslangic. Aynı SQL'i her modelde tekrar yazmayalım. #}
@@ -1200,9 +1226,9 @@ Dosya: `canli/olist/macros/gun_farki.sql`
 
 **Söyle:** Aynı SQL'i tek yerde tut.  
 
-### Adım 66 · makroyu kullan
+### Adım 69 · makroyu kullan
 
-Dosya: `canli/olist/models/intermediate/int_order_delays.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/intermediate/int_order_delays.sql`
 
 ```sql
 -- Sipariş başına teslimat gecikmesi (gün) + sepet tutarı
@@ -1238,9 +1264,9 @@ left join items i on o.order_id = i.order_id
 
 **Göster:** VS Code: `gun_farki(...)`.
 
-### Adım 67 · Jinja döngüsü
+### Adım 70 · Jinja döngüsü
 
-Dosya: `canli/olist/models/marts/mart_delivery_satisfaction.sql`
+Dosya: `~/Documents/projects/vbo-dbt-spark-demo/canli/olist/models/marts/mart_delivery_satisfaction.sql`
 
 ```sql
 -- İş sorusu: Gecikme memnuniyeti düşürüyor mu?
@@ -1287,7 +1313,7 @@ order by delay_bucket
 **Söyle:** Yeni eşik = listeye bir satır.  
 **Göster:** VS Code: `for` döngüsü.
 
-### Adım 68 · build
+### Adım 71 · build
 
 ```bash
 uv run dbt build
@@ -1295,7 +1321,7 @@ uv run dbt build
 
 **Göster:** Terminal: `PASS=23 WARN=1`.
 
-### Adım 69 · compiled SQL
+### Adım 72 · compiled SQL
 
 ```bash
 cat target/compiled/olist/models/marts/mart_delivery_satisfaction.sql
@@ -1304,7 +1330,7 @@ cat target/compiled/olist/models/marts/mart_delivery_satisfaction.sql
 **Söyle:** Spark Jinja görmez: düz case when.  
 **Göster:** Terminal.
 
-### Adım 70 · sonuç
+### Adım 73 · sonuç
 
 ```bash
 uv run dbt show -s mart_delivery_satisfaction

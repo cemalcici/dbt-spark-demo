@@ -11,4 +11,4 @@ rm -rf "$dst/models" "$dst/macros" "$dst/tests"
 git -C "$root" archive "perde-$nn" models macros tests dbt_project.yml | tar -x -C "$dst"
 # Çözüm projesinin adı olist_demo, canlıda 'dbt init olist' ile adı olist
 grep -rl olist_demo "$dst/models" "$dst/macros" "$dst/tests" "$dst/dbt_project.yml" | xargs perl -pi -e 's/olist_demo/olist/g' || true
-echo "canli/olist artık perde-$nn hâlinde. Şimdi: uv run dbt build"
+echo "$dst artık perde-$nn hâlinde. Şimdi: uv run dbt build"
