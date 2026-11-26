@@ -1,4 +1,10 @@
 -- İş sorusu: Gecikme memnuniyeti düşürüyor mu?
+{#- Gruplar tek yerde: yeni eşik eklemek = listeye bir satır eklemek -#}
+{%- set gecikme_gruplari = [
+    (0, '1. erken/zamanında'),
+    (3, '2. 1-3 gün'),
+    (7, '3. 4-7 gün'),
+] %}
 with delays as (
     select * from {{ ref('int_order_delays') }}
 ),
@@ -13,9 +19,9 @@ reviews as (
 joined as (
     select
         case
-            when d.delay_days <= 0 then '1. erken/zamanında'
-            when d.delay_days <= 3 then '2. 1-3 gün'
-            when d.delay_days <= 7 then '3. 4-7 gün'
+        {%- for ust_sinir, grup in gecikme_gruplari %}
+            when d.delay_days <= {{ ust_sinir }} then '{{ grup }}'
+        {%- endfor %}
             else '4. 7+ gün'
         end as delay_bucket,
         r.review_score

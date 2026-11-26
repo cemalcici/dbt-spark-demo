@@ -21,8 +21,8 @@ select
     o.estimated_delivery_at,
     o.delivered_at,
     -- pozitif = tahmini tarihten sonra geldi (gecikti)
-    datediff(o.delivered_at, o.estimated_delivery_at) as delay_days,
-    datediff(o.delivered_at, o.purchased_at)          as delivery_days,  -- yeni: toplam teslim süresi
+    {{ gun_farki('o.delivered_at', 'o.estimated_delivery_at') }} as delay_days,
+    {{ gun_farki('o.delivered_at', 'o.purchased_at') }}          as delivery_days,  -- yeni: toplam teslim süresi
     i.item_count,
     i.order_amount
 from orders o

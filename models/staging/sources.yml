@@ -7,6 +7,12 @@ sources:
     tables:
       - name: orders
         description: "Sipariş başlıkları: durum ve tarih alanları (2016-2018)."
+        config:
+          # CSV'de her şey string: tazelik için timestamp'e çeviriyoruz
+          loaded_at_field: "cast(order_purchase_timestamp as timestamp)"
+          freshness:
+            warn_after: {count: 1, period: day}
+            error_after: {count: 7, period: day}
       - name: order_items
         description: "Sipariş kalemleri: ürün, satıcı, fiyat, kargo ücreti."
       - name: customers
