@@ -13,7 +13,7 @@ Yukarıdan aşağı akar. Her adım = tek dosya **ya da** tek komut. Komutlar `c
 - [ ] `uv sync` (`.venv`, dbt 1.11)
 - [ ] `scripts/pyhive-yama.sh` ("PyHive yaması uygulandı" ya da "zaten uygulanmış")
 - [ ] `rm -rf canli && mkdir canli`
-- [ ] Sekmeler: terminal (repo kökü), VS Code (`canli/`), http://localhost:4040 (Spark UI); docs sonra http://localhost:8081
+- [ ] Sekmeler: terminal (repo kökü), VS Code (repo kökü: `code .`; Python yorumlayıcısı `.venv`), http://localhost:4040 (Spark UI); docs sonra http://localhost:8081
 
 
 ---
