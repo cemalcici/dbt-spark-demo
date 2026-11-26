@@ -1345,3 +1345,19 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 10 && uv run dbt
 ---
 
 **Kapanış:** `uv run dbt build` tek komutla kaynaktan marta her şey + testler + kontrat. Spark hesaplar, dbt hesabı güvenilir kılar.
+
+---
+
+## Sorulursa · VS Code'da "profil bulunamadı" hatası
+
+**Kısa cevap:** dbt profili nerede arayacağını bir sıraya göre bulur. Terminalde ona `DBT_PROFILES_DIR` ile "profil burada" dedik; VS Code eklentisi (dbt Power User) o değişkeni görmüyor, varsayılan yer olan `~/.dbt/profiles.yml`'a bakıyor.
+
+**Çözüm (bir kez):** varsayılan yere, bizim profile giden bir kısayol koyduk:
+
+```bash
+ln -s ~/Documents/projects/vbo-dbt-spark-demo/canli/profiles.yml ~/.dbt/profiles.yml
+```
+
+**Neden profili baştan `~/.dbt`'ye yazmadık?** Profil bağlantı bilgisi (ve gerçek hayatta şifre) taşır; demoda her şeyi proje yanında, görünür tutmak istedik. Gerçek projede ikisi de olur: kişisel makinede `~/.dbt/profiles.yml`, CI'da `--profiles-dir` ya da ortam değişkeni.
+
+**İlgili tuzak:** Makinede global bir `dbt` 2.x (dbt Fusion) kuruluysa, `uv run` olmadan yazılan `dbt` komutu onu çalıştırır ve "spark adapter is not yet supported" der. Fusion henüz Spark'ı desteklemiyor; bu demoda dbt-core 1.11 kullanıyoruz, bu yüzden her komut `uv run dbt ...`.
