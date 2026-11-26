@@ -5,3 +5,5 @@ logs/
 dbt_packages/
 state/
 .user.yml
+.venv/
+canli/

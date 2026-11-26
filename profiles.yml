@@ -12,3 +12,13 @@ olist_demo:
       threads: 4
       connect_retries: 3
       connect_timeout: 10
+    local:             # yerel uv akışı: Spark'a host'tan bağlan
+      type: spark
+      method: thrift
+      host: localhost    # compose 10000 portunu dışarı açıyor
+      port: 10000
+      user: dbt
+      schema: demo
+      threads: 4
+      connect_retries: 3
+      connect_timeout: 10

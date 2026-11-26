@@ -4,6 +4,8 @@
 > dbt bir motor değildir: SQL'i Spark'a gönderir. Üstüne DAG, test, doküman, seçim ve kontrat ekler.
 > Her dbt komutundan sonra **Spark UI'da (http://localhost:4040 → SQL / Jobs)** gerçek işleri gösterin.
 
+> Canlı ders artık boş klasörden, yerel dbt ile: [CANLI.md](CANLI.md). Bu dosya container akışı (yedek).
+
 **İş sorusu:** *Gecikme memnuniyeti düşürüyor mu?*
 
 Kod bloklarını olduğu gibi kopyalayıp yapıştırın. Tüm komutlar repo kökünden çalışır.
