@@ -1,0 +1,61 @@
+# Demo yığını: Spark (hesaplama motoru) + dbt (orkestrasyon/test/dokümantasyon)
+services:
+  spark:
+    image: apache/spark:3.5.5
+    container_name: demo-spark
+    # Spark Thrift Server ön planda: dbt buraya JDBC/Thrift (10000) ile bağlanır
+    command:
+      - /opt/spark/bin/spark-submit
+      - --class
+      - org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
+      - --name
+      - dbt-spark-demo
+      - --master
+      - local[*]
+      - --driver-memory
+      - 3g
+      - --conf
+      - spark.sql.shuffle.partitions=8
+      - --conf
+      - spark.sql.warehouse.dir=/opt/spark/work-dir/warehouse
+      - --conf
+      - spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=/opt/spark/work-dir/metastore_db;create=true
+      - spark-internal
+      - --hiveconf
+      - hive.server2.thrift.port=10000
+      - --hiveconf
+      - hive.server2.thrift.bind.host=0.0.0.0
+    ports:
+      - "10000:10000"
+      - "4040:4040"
+    volumes:
+      - ./data:/data:ro
+      # Derby metastore + warehouse: tablolar dbt çağrıları arasında kaybolmasın
+      - spark-warehouse:/opt/spark/work-dir
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/10000"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 10s
+
+  dbt:
+    build:
+      context: .
+      dockerfile: docker/dbt.Dockerfile
+    image: dbt-spark-demo:1.11
+    container_name: demo-dbt
+    working_dir: /usr/app
+    environment:
+      DBT_PROFILES_DIR: /usr/app
+    volumes:
+      - .:/usr/app
+    ports:
+      - "8080:8080"
+    depends_on:
+      spark:
+        condition: service_healthy
+    command: ["sleep", "infinity"]
+
+volumes:
+  spark-warehouse:

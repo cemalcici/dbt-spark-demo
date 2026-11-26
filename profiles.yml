@@ -1,0 +1,14 @@
+# dbt veri tutmaz: sadece Spark Thrift Server'a SQL gönderir.
+olist_demo:
+  target: dev
+  outputs:
+    dev:
+      type: spark
+      method: thrift
+      host: spark        # docker compose servis adı
+      port: 10000
+      user: dbt
+      schema: demo       # Spark'ta modellerin yazılacağı veritabanı
+      threads: 4
+      connect_retries: 3
+      connect_timeout: 10
