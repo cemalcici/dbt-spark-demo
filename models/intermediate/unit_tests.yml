@@ -1,0 +1,22 @@
+version: 2
+
+unit_tests:
+  - name: gecikme_gunu_dogru_hesaplanir
+    description: "Sahte satırlarla gecikme mantığını test eder; gerçek veriye dokunmaz."
+    model: int_order_delays
+    given:
+      - input: ref('stg_orders')
+        rows:
+          - {order_id: erken,    order_status: delivered, purchased_at: "2018-01-01 10:00:00", estimated_delivery_at: "2018-01-10 00:00:00", delivered_at: "2018-01-08 15:00:00"}
+          - {order_id: zamaninda, order_status: delivered, purchased_at: "2018-01-01 10:00:00", estimated_delivery_at: "2018-01-10 00:00:00", delivered_at: "2018-01-10 23:59:00"}
+          - {order_id: gec,      order_status: delivered, purchased_at: "2018-01-01 10:00:00", estimated_delivery_at: "2018-01-10 00:00:00", delivered_at: "2018-01-15 09:00:00"}
+          - {order_id: iptal,    order_status: canceled,  purchased_at: "2018-01-01 10:00:00", estimated_delivery_at: "2018-01-10 00:00:00", delivered_at: null}
+      - input: ref('stg_order_items')
+        rows:
+          - {order_id: gec, price: 10.00}
+          - {order_id: gec, price: 5.50}
+    expect:
+      rows:
+        - {order_id: erken,     delay_days: -2, delivery_days: 7,  item_count: null, order_amount: null}
+        - {order_id: zamaninda, delay_days: 0,  delivery_days: 9,  item_count: null, order_amount: null}
+        - {order_id: gec,       delay_days: 5,  delivery_days: 14, item_count: 2,    order_amount: 15.50}
