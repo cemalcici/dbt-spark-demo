@@ -1358,6 +1358,16 @@ Kurtarma (canli/olist içinden): `../../scripts/perdeye-atla.sh 10 && uv run dbt
 ln -s ~/Documents/projects/vbo-dbt-spark-demo/canli/profiles.yml ~/.dbt/profiles.yml
 ```
 
+**Ders sonrası:** `rm ~/.dbt/profiles.yml` (yalnız kısayolu siler, asıl profil `canli/` altında kalır).
+
 **Neden profili baştan `~/.dbt`'ye yazmadık?** Profil bağlantı bilgisi (ve gerçek hayatta şifre) taşır; demoda her şeyi proje yanında, görünür tutmak istedik. Gerçek projede ikisi de olur: kişisel makinede `~/.dbt/profiles.yml`, CI'da `--profiles-dir` ya da ortam değişkeni.
 
 **İlgili tuzak:** Makinede global bir `dbt` 2.x (dbt Fusion) kuruluysa, `uv run` olmadan yazılan `dbt` komutu onu çalıştırır ve "spark adapter is not yet supported" der. Fusion henüz Spark'ı desteklemiyor; bu demoda dbt-core 1.11 kullanıyoruz, bu yüzden her komut `uv run dbt ...`.
+
+## Sorulursa · `target/` klasörü VS Code'da görünmüyor
+
+**Kısa cevap:** Klasör diskte var, `dbt` her `compile`/`run`/`build`'de `target/compiled`, `target/run` ve `manifest.json`'ı yazıyor. VS Code'un dosya gezgini onu gizliyordu: `.vscode/settings.json`'daki `files.exclude` içinde `"**/target": true` vardı. Kaldırıldı; artık gezginde görünür.
+
+**Kontrol:** `ls target/` (canli/olist içinden). Gezgin hâlâ göstermiyorsa pencereyi yenile (Cmd+Shift+P → *Developer: Reload Window*).
+
+**Neden önemli:** `target/compiled` dbt'nin Spark'a gönderdiği düz SQL'dir; "dbt motor değil, derleyici" mesajının kanıtı burada. `target/` git'e girmez (`.gitignore`), gezginde görünmesi yeter.
