@@ -12,3 +12,13 @@ snapshot-paths: ["snapshots"]
 
 target-path: target
 clean-targets: [target, dbt_packages]
+
+models:
+  olist_demo:
+    staging:
+      +materialized: view      # ucuz: sadece tanım, veri yazılmaz
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table     # pahalı hesap bir kez yapılır, parquet olarak yazılır
+      +file_format: parquet
