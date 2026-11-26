@@ -2,10 +2,13 @@ version: 2
 
 models:
   - name: stg_orders
+    description: "Temizlenmiş siparişler: tarih alanları timestamp'e çevrildi, kolonlar yeniden adlandırıldı."
     columns:
       - name: order_id
+        description: "Sipariş anahtarı."
         data_tests: [unique, not_null]
       - name: customer_id
+        description: "Siparişe özel müşteri anahtarı."
         data_tests:
           - not_null
           - relationships:
@@ -13,19 +16,28 @@ models:
                 to: ref('stg_customers')
                 field: customer_id
       - name: order_status
+        description: "Sipariş durumu (delivered, shipped, canceled ...)."
         data_tests:
           - accepted_values:
               arguments:
                 values: [delivered, shipped, canceled, unavailable, invoiced, processing, created, approved]
+      - name: delivered_at
+        description: "Müşteriye teslim zamanı (teslim edilmediyse null)."
+      - name: estimated_delivery_at
+        description: "Siparişte müşteriye söz verilen tahmini teslim tarihi."
 
   - name: stg_customers
+    description: "Müşteriler; şehir adı düzeltildi."
     columns:
       - name: customer_id
+        description: "Siparişe özel müşteri anahtarı."
         data_tests: [unique, not_null]
 
   - name: stg_order_items
+    description: "Sipariş kalemleri; fiyatlar decimal."
     columns:
       - name: order_id
+        description: "Ait olduğu sipariş."
         data_tests:
           - relationships:
               arguments:
@@ -33,8 +45,10 @@ models:
                 field: order_id
 
   - name: stg_order_reviews
+    description: "Müşteri yorumları; puan int'e çevrildi."
     columns:
       - name: review_id
+        description: "Yorum anahtarı. Dikkat: kaynakta tekil değil."
         data_tests:
           # Gerçek veride 789 review_id tekrar ediyor (aynı yorum birden çok siparişe bağlı).
           # Bilinen kaynak sorunu: pipeline'ı durdurmasın ama her koşuda görünür kalsın.
@@ -42,6 +56,7 @@ models:
               config:
                 severity: warn
       - name: review_score
+        description: "1 (çok kötü) - 5 (çok iyi)."
         data_tests:
           - not_null
           - accepted_values:

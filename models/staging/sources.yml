@@ -2,9 +2,14 @@ version: 2
 
 sources:
   - name: olist
+    description: "Olist Brezilya e-ticaret verisi (Kaggle). Spark'ta CSV üzerine external table olarak duruyor."
     schema: raw
     tables:
       - name: orders
+        description: "Sipariş başlıkları: durum ve tarih alanları (2016-2018)."
       - name: order_items
+        description: "Sipariş kalemleri: ürün, satıcı, fiyat, kargo ücreti."
       - name: customers
+        description: "Müşteriler. customer_id siparişe özel; gerçek kişi customer_unique_id."
       - name: order_reviews
+        description: "Müşteri yorumları ve 1-5 puan. Yorum metni çok satırlı olabilir."

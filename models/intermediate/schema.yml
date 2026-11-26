@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: int_order_delays
+    description: "Teslim edilmiş her sipariş için gecikme günü ve sepet tutarı."
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: delay_days
+        description: "Teslim tarihi - tahmini teslim tarihi (gün). Pozitif = gecikti, 0/negatif = zamanında/erken."
+        data_tests: [not_null]
+      - name: order_amount
+        description: "Sipariş kalemlerinin toplam fiyatı."

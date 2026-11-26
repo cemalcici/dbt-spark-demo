@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: mart_delivery_satisfaction
+    description: >
+      **Gecikme memnuniyeti düşürüyor mu?** Gecikme grubuna göre sipariş sayısı,
+      ortalama yorum puanı ve kötü yorum (puan ≤ 2) oranı.
+    columns:
+      - name: delay_bucket
+        description: "Gecikme grubu: erken/zamanında, 1-3 gün, 4-7 gün, 7+ gün."
+        data_tests: [unique, not_null]
+      - name: order_count
+        description: "Gruptaki yorumlu sipariş sayısı."
+      - name: avg_review_score
+        description: "Ortalama yorum puanı (sipariş başına ortalama alınarak)."
+      - name: bad_review_pct
+        description: "Puanı ≤ 2 olan siparişlerin yüzdesi."
