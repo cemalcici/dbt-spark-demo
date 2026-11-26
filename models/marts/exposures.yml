@@ -1,0 +1,14 @@
+version: 2
+
+exposures:
+  - name: teslimat_memnuniyeti_panosu
+    label: "Teslimat memnuniyeti panosu"
+    type: dashboard
+    maturity: medium
+    url: http://localhost:8080/#!/exposure/exposure.olist_demo.teslimat_memnuniyeti_panosu
+    description: "Operasyon ekibinin haftalık baktığı pano: gecikme grubuna göre memnuniyet."
+    depends_on:
+      - ref('mart_delivery_satisfaction')
+    owner:
+      name: Veri Ekibi
+      email: veri@example.com

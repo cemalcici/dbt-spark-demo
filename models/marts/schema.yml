@@ -5,13 +5,20 @@ models:
     description: >
       **Gecikme memnuniyeti düşürüyor mu?** Gecikme grubuna göre sipariş sayısı,
       ortalama yorum puanı ve kötü yorum (puan ≤ 2) oranı.
+    config:
+      contract:
+        enforced: true   # kolon adı + tipi build sırasında kontrol edilir
     columns:
       - name: delay_bucket
+        data_type: string
         description: "Gecikme grubu: erken/zamanında, 1-3 gün, 4-7 gün, 7+ gün."
         data_tests: [unique, not_null]
       - name: order_count
+        data_type: bigint
         description: "Gruptaki yorumlu sipariş sayısı."
       - name: avg_review_score
+        data_type: double
         description: "Ortalama yorum puanı (sipariş başına ortalama alınarak)."
       - name: bad_review_pct
+        data_type: decimal(25,1)
         description: "Puanı ≤ 2 olan siparişlerin yüzdesi."
